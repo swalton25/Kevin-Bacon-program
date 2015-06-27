@@ -1,0 +1,94 @@
+
+#December 11, 2014
+#Project-Kevin Bacon	
+
+import json
+import sys
+import os
+
+# node class for actors
+class Node(object):
+	def __init__(self, name):
+		self.name = name
+		self.edges = []
+
+	def addEdge(self, actor, film):
+		self.edges.append((actor,film))
+
+
+# function to load data from json files
+def load_data(files):
+	actorName = {}
+	for filename in files:
+                # Need to have your own file directory
+		json_data=open("/home/******/Desktop/locate-bacon/films/"+ filename).read()
+		data = json.loads(json_data)
+		filmname = data["film"]["name"]
+		listOfCharacter = data['cast']
+
+		# for each actor in the cast
+		for i in range(0,len(listOfCharacter)):
+			# if they have already been seen, get their node pointer
+			if listOfCharacter[i]['name'] in actorName:
+				actornode = actorName[listOfCharacter[i]['name']]
+
+			# else create j new one
+			else:
+				actornode = Node(listOfCharacter[i]['name'])
+				actorName[listOfCharacter[i]['name']] = actornode
+
+			# for all the other actors, add an edge connecting them
+			for j in range(i+1,len(listOfCharacter)):
+					actornode.addEdge(listOfCharacter[j]['name'], filmname)
+
+	return actorName
+
+# function for computing breath first algorithm on graph of entertainer
+def locate_kevin_bacon(actorName, name):
+	# check for KB
+	if name == "Kevin Bacon":
+		return 2
+	# check for unknown entertainer
+	elif name not in actorName:
+		return 0
+	else:
+		# create queue structure to hold actor node accessors and past path
+  		queue = [(name, [(name, "start")])]
+  		while queue:
+  			(vertex, path) = queue.pop(0)
+  			# iterate through the possible paths away from the actor, minus any already taken
+  			for nextnode in set(actorName[vertex].edges) - set(path):
+  				if nextnode[0] == "Kevin Bacon":
+  					return path + [nextnode]
+  				else:
+  					queue.append((nextnode[0], path + [nextnode]))
+  		# return error code for Kevin not connected
+  		return 1
+
+def output_print(path):
+	print(path[0][0]+"-" )
+	for p in path[1:]:
+		print("-(" + p[1] + ")->" + p[0])
+
+
+def main(arg):
+	# -----
+	# file directory to look in and change to run
+	files = os.listdir("/home/******/Desktop/locate-bacon/films/")
+	# ----- 
+	actorName = load_data(files)
+	search = locate_kevin_bacon(actorName, arg)
+	if search == 0:
+		print ("I don't know this actor!")
+	elif search == 1:
+		print ("Kevin Bacon is not connected to this actor!")
+	elif search == 2:
+		print ("I am Kevin Bacon!!!")
+	else:
+		output_print(search)
+
+if __name__ == "__main__":
+	for arg in sys.argv[1:]:
+		main(arg)
+		print ("")
+
